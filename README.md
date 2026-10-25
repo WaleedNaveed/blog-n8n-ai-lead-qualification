@@ -4,6 +4,15 @@ An importable n8n workflow that receives incoming leads through an HTTP webhook,
 
 **Key design choice:** business-critical classification stays in JavaScript; the language model explains the result rather than deciding it.
 
+## Step-by-Step Tutorial
+
+For a complete walkthrough of building this workflow,
+including n8n configuration, Ollama integration,
+JavaScript classification, and testing with Postman,
+read the full article on Hashnode:
+
+**[Read the Full Article](https://wntech.hashnode.dev/how-to-build-ai-lead-qualification-workflow-n8n-ollama-qwen)**
+
 ## Workflow overview
 
 ![Complete n8n workflow](screenshots/1workflow-overview.png)
