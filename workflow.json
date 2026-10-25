@@ -1,0 +1,553 @@
+{
+  "name": "AI Lead Qualification Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-qualification",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -176,
+        0
+      ],
+      "id": "1a74e175-2b57-43a9-b796-e9f3c8fade06",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e577e2e0-369b-414e-986d-6eaa53133e66",
+              "name": "fullName",
+              "value": "={{ $json.body.fullName }}",
+              "type": "string"
+            },
+            {
+              "id": "c2fa205e-47ef-407e-a429-d0c12a37e200",
+              "name": "email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "4168c373-2f30-4208-ba94-c41d8eed210a",
+              "name": "company",
+              "value": "={{ $json.body.company }}",
+              "type": "string"
+            },
+            {
+              "id": "42924bb7-a38f-42bf-aaa5-600c73d884b4",
+              "name": "projectRequirements",
+              "value": "={{ $json.body.projectRequirements }}",
+              "type": "string"
+            },
+            {
+              "id": "9e8f2467-21bc-4270-a55a-92dd2374e905",
+              "name": "budget",
+              "value": "={{ $json.body.budget }}",
+              "type": "string"
+            },
+            {
+              "id": "03f41776-d9d2-4227-8ff1-ad447bde7327",
+              "name": "timeline",
+              "value": "={{ $json.body.timeline }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        0,
+        -240
+      ],
+      "id": "1cb360e8-6d9a-49ed-84cc-5776ea60d668",
+      "name": "Normalize Lead Data"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.classification }}",
+                    "rightValue": "HOT",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "ce433e48-902d-4f41-b844-48167a2dc600"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "HOT"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "4a6398a9-f39b-4792-93dd-5dd4f35c0b38",
+                    "leftValue": "={{ $json.classification }}",
+                    "rightValue": "WARM",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "WARM"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "4e3d5a46-ba4c-4007-8824-1e697786a83d",
+                    "leftValue": "={{ $json.classification }}",
+                    "rightValue": "COLD",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "COLD"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        384,
+        -240
+      ],
+      "id": "3a5068d9-56fe-47d4-ac6c-3f2463e8924e",
+      "name": "Route by Classification"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "qwen2.5:1.5b",
+          "mode": "list",
+          "cachedResultName": "qwen2.5:1.5b"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a sales assistant.\n\nThe lead has already been classified using fixed business rules.\nDo NOT change, question, or recalculate the classification.\n\nLead:\nName: {{ $json.fullName }}\nCompany: {{ $json.company }}\nProject Requirements: {{ $json.projectRequirements }}\nBudget: {{ $json.budget }}\nTimeline: {{ $json.timeline }}\nClassification: {{ $json.classification }}\n\nWrite ONE short professional sentence explaining the lead's classification.\n\nUse the project requirement as context, but remember that the classification is based on the budget:\n- COLD = budget below $4,000\n- WARM = budget from $4,000 to $9,999\n- HOT = budget $10,000 or higher\n\nReturn only the reason sentence.\nDo not include \"Reason:\".\nDo not change the classification.\nDo not include analysis or any other text."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.ollama",
+      "typeVersion": 1,
+      "position": [
+        16,
+        -16
+      ],
+      "id": "54d86de5-bbbc-4688-86e4-07fdab065377",
+      "name": "Generate AI Reason"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "de2d3131-a450-4445-b866-b3221a0661bd",
+              "name": "classification",
+              "value": "={{ $('Classify Lead').item.json.classification }}",
+              "type": "string"
+            },
+            {
+              "id": "d7b307c0-abbe-42b6-b774-bd5deb9508ab",
+              "name": "reason",
+              "value": "={{ $json.content.trim() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        416,
+        -16
+      ],
+      "id": "fc7b5fb0-0604-4ba6-bad2-2527b78174eb",
+      "name": "Prepare Qualified Lead"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const budgetText = String($json.budget ?? '');\n\n// Extract all numeric amounts from values such as:\n// \"$10,000 - $15,000\"\n// \"$5,000\"\n// \"10000\"\nconst amounts = budgetText\n  .match(/\\$?\\s*\\d[\\d,]*(?:\\.\\d+)?/g)\n  ?.map(value =>\n    Number(value.replace(/[$,\\s]/g, ''))\n  )\n  .filter(Number.isFinite) ?? [];\n\nif (amounts.length === 0) {\n  throw new Error(`Unable to parse budget: \"${budgetText}\"`);\n}\n\n// For a budget range, use the lower bound.\nconst budgetAmount = Math.min(...amounts);\n\nlet classification;\n\nif (budgetAmount >= 10000) {\n  classification = 'HOT';\n} else if (budgetAmount >= 4000) {\n  classification = 'WARM';\n} else {\n  classification = 'COLD';\n}\n\nreturn {\n  json: {\n    ...$json,\n    budgetAmount,\n    classification\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        -240
+      ],
+      "id": "25ba79a4-d89c-4767-a720-3e45747a2ec3",
+      "name": "Classify Lead"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0c9d200e-338b-47c2-8143-e58512ab7558",
+              "name": "action",
+              "value": "Contact Immediately",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        752,
+        -256
+      ],
+      "id": "0153bf19-6204-41d2-a606-2b3129f577b5",
+      "name": "Set HOT Action"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0c9d200e-338b-47c2-8143-e58512ab7558",
+              "name": "action",
+              "value": "Follow Up",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        672,
+        -128
+      ],
+      "id": "13a63c20-db42-4a76-9680-817639b2a1dc",
+      "name": "Set WARM Action"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0c9d200e-338b-47c2-8143-e58512ab7558",
+              "name": "action",
+              "value": "Nurture",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        640,
+        32
+      ],
+      "id": "249e6d36-a818-4b0d-a61f-ec5c3ca5a758",
+      "name": "Set COLD Action"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "fullName": "={{ $('Normalize Lead Data').item.json.fullName }}",
+            "email": "={{ $('Normalize Lead Data').item.json.email }}",
+            "company": "={{ $('Normalize Lead Data').item.json.company }}",
+            "projectRequirements": "={{ $('Normalize Lead Data').item.json.projectRequirements }}",
+            "budget": "={{ $('Normalize Lead Data').item.json.budget }}",
+            "timeline": "={{ $('Normalize Lead Data').item.json.timeline }}",
+            "classification": "={{ $json.classification }}",
+            "reason": "={{ $json.reason }}",
+            "action": "={{ $json.action }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "fullName",
+              "displayName": "fullName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "projectRequirements",
+              "displayName": "projectRequirements",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "budget",
+              "displayName": "budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "timeline",
+              "displayName": "timeline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "classification",
+              "displayName": "classification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        -16
+      ],
+      "id": "7cd4f531-da0a-4641-aa9c-174ee5b30d46",
+      "name": "Insert Lead"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Lead Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Lead Data": {
+      "main": [
+        [
+          {
+            "node": "Classify Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Classification": {
+      "main": [
+        [
+          {
+            "node": "Set HOT Action",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set WARM Action",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set COLD Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AI Reason": {
+      "main": [
+        [
+          {
+            "node": "Prepare Qualified Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Qualified Lead": {
+      "main": [
+        [
+          {
+            "node": "Route by Classification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Lead": {
+      "main": [
+        [
+          {
+            "node": "Generate AI Reason",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set HOT Action": {
+      "main": [
+        [
+          {
+            "node": "Insert Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set WARM Action": {
+      "main": [
+        [
+          {
+            "node": "Insert Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set COLD Action": {
+      "main": [
+        [
+          {
+            "node": "Insert Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
+}
